@@ -4,14 +4,14 @@ set -e
 
 FOLDER=$1
 GITHUB_USERNAME=$2
-STARTER_NAME="${3:-name}"
+REPO_NAME="${3:-name}"
 BASE=$(pwd)
 
-git config --global user.email "johno-actions-push-subdirectories@example.org"
+git config --global user.email "contact@akeneo.com"
 git config --global user.name "$GITHUB_USERNAME"
 
 echo "Cloning folders in $FOLDER and pushing to $GITHUB_USERNAME"
-echo "Using $STARTER_NAME as the package.json key"
+echo "Using $REPO_NAME as the package.json key"
 
 # sync to read-only clones
 for folder in $FOLDER/*; do
@@ -20,10 +20,8 @@ for folder in $FOLDER/*; do
 
   echo "$folder"
 
-  NAME=$(cat $folder/package.json | jq --arg name "$STARTER_NAME" -r '.[$name]')
-  echo "  Name: $NAME"
-  IS_WORKSPACE=$(cat $folder/package.json | jq -r '.workspaces')
-  CLONE_DIR="__${NAME}__clone__"
+  echo "  Name: $REPO_NAME"
+  CLONE_DIR="__${REPO_NAME}__clone__"
   echo "  Clone dir: $CLONE_DIR"
 
   # clone, delete files in the clone, and copy (new) files over
@@ -33,22 +31,15 @@ for folder in $FOLDER/*; do
   find . | grep -v ".git" | grep -v "^\.*$" | xargs rm -rf # delete all files (to handle deletions in monorepo)
   cp -r $BASE/$folder/. .
 
-  # generate a new yarn.lock file based on package-lock.json unless you're in a workspace
-  if [ "$IS_WORKSPACE" = null ]; then
-    echo "  Regenerating yarn.lock"
-    rm -rf yarn.lock
-    yarn
-  fi
-
   # Commit if there is anything to
   if [ -n "$(git status --porcelain)" ]; then
-    echo  "  Committing $NAME to $GITHUB_REPOSITORY"
+    echo  "  Committing $REPO_NAME to $GITHUB_REPOSITORY"
     git add .
-    git commit --message "Update $NAME from $GITHUB_REPOSITORY"
+    git commit --message "Update $REPO_NAME from $GITHUB_REPOSITORY"
     git push origin master
-    echo  "  Completed $NAME"
+    echo  "  Completed $REPO_NAME"
   else
-    echo "  No changes, skipping $NAME"
+    echo "  No changes, skipping $REPO_NAME"
   fi
 
   cd $BASE
